@@ -1,0 +1,13 @@
+data_filepath: data
+target_column: MedHouseVal
+estimator_params:
+  hidden_layer_sizes: [10, 20, 15]
+  alpha: 0.01
+  max_iter: 10
+
+mlflow_uri: http://127.0.0.1:5000
+experiment_name: housing
+
+minio_user: minio_gradiant
+minio_password: minio_gradiant
+minio_uri: http://127.0.0.1:9000

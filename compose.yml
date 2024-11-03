@@ -1,0 +1,74 @@
+services:
+  # app:
+  #   build: app
+  
+  # ml_worker:
+  #   build: ml
+
+  # inference_server:
+  #   build: ml
+
+  mlflow:
+    build: mlflow
+    ports:
+      - 5000:5000
+      - 4040:4040
+    environment:
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - AWS_ACCESS_KEY_ID=minio_gradiant
+      - AWS_SECRET_ACCESS_KEY=minio_gradiant
+      - MLFLOW_S3_IGNORE_TLS=true
+    command: >
+      mlflow server
+      --backend-store-uri postgresql://mlflow:mlflow@db:5432/mlflow
+      --host 0.0.0.0
+      --default-artifact-root s3://ml-artifacts/
+
+  db:
+    image: postgres:11
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=mlflow
+      - POSTGRES_PASSWORD=mlflow
+      - POSTGRES_DATABASE=mlflow
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+
+  minio:
+    image: minio/minio:RELEASE.2023-01-25T00-19-54Z
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: minio_gradiant
+      MINIO_ROOT_PASSWORD: minio_gradiant
+    command: server --address 0.0.0.0:9000 --console-address 0.0.0.0:9001 /data
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 20s
+      retries: 3
+
+  mc_admin:
+    image: minio/mc
+    entrypoint: >
+      bash -c "/usr/bin/mc alias set myminio http://minio:9000 minio_gradiant minio_gradiant;
+      /usr/bin/mc mb myminio/ml-artifacts;
+      /usr/bin/mc admin policy create myminio ml_readwrite ml_readwrite_policy.json;
+      /usr/bin/mc admin user add myminio mlflow_user mlflow_password;
+      /usr/bin/mc admin group add myminio mlflow mlflow_user;
+      /usr/bin/mc admin policy attach myminio ml_readwrite --group=mlflow;
+      exit 0
+      "
+    volumes:
+      - ./minio/ml_readwrite_policy.json:/ml_readwrite_policy.json
+    depends_on:
+      minio:
+        condition: service_healthy
+
+volumes:
+  db-data:
+  minio-data:

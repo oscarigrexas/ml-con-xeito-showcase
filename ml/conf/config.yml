@@ -8,6 +8,5 @@ estimator_params:
 mlflow_uri: http://127.0.0.1:5000
 experiment_name: housing
 
-minio_user: minio_gradiant
-minio_password: minio_gradiant
-minio_uri: http://127.0.0.1:9000
+bucket_name: elt_data
+training_data: rest_api_data/air_quality/2024-11-14/1731606441.4002414.0d885de67b.csv

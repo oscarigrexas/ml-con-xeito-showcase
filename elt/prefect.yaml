@@ -1,0 +1,20 @@
+name: elt
+prefect-version: 3.0.0
+
+build:
+push:
+pull:
+
+deployments:
+  - name: load_air_quality
+    version:
+    tags: [elt]
+    description:
+    schedule:
+    entrypoint: src/air_quality_pipeline.py:load_air_quality
+    parameters:
+    work_pool:
+      name: main-work-pool
+      work_queue_name:
+      job_variables: {}
+    is_schedule_active: true

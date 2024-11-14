@@ -1,0 +1,12 @@
+[runtime]
+log_level = "WARNING"
+dlthub_telemetry = false
+
+
+[destination.filesystem]
+layout = "{table_name}/{YYYY}-{MM}-{DD}/{load_id}.{file_id}.csv"
+bucket_url = "s3://elt-data"                                     # replace with your bucket name,
+
+
+[normalize]
+loader_file_format = "csv"

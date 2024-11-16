@@ -38,7 +38,7 @@ def load_air_quality() -> None:
                             "start_date": {
                                 "type": "incremental",
                                 "cursor_path": "time",
-                                "initial_value": "2024-09-01",
+                                "initial_value": "2024-01-01",
                                 "convert": lambda iso_str: iso_str.split("T")[0],
                             },
                         },

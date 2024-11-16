@@ -1,0 +1,20 @@
+name: ml
+prefect-version: 3.0.0
+
+build:
+push:
+pull:
+
+deployments:
+  - name: train_air_quality_model
+    version:
+    tags: [ml]
+    description:
+    schedule:
+    entrypoint: src/training.py:train_model
+    parameters:
+    work_pool:
+      name: ml-work-pool
+      work_queue_name:
+      job_variables: {}
+    is_schedule_active: true

@@ -1,12 +1,16 @@
-data_filepath: data
-target_column: MedHouseVal
+experiment_name: training
+
+bucket_name: elt-data
+training_data_folder: rest_api_data/air_quality/
+
+features:
+  - carbon_monoxide
+  - nitrogen_dioxide
+  - sulphur_dioxide
+  - ozone
+  - dust
+  - european_aqi
+
 estimator_params:
-  hidden_layer_sizes: [10, 20, 15]
-  alpha: 0.01
-  max_iter: 10
-
-mlflow_uri: http://127.0.0.1:5000
-experiment_name: housing
-
-bucket_name: elt_data
-training_data: rest_api_data/air_quality/2024-11-14/1731606441.4002414.0d885de67b.csv
+  n_estimators: 200
+  min_samples_split: 3

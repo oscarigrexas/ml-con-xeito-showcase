@@ -1,6 +1,13 @@
 services:
-  # app:
-  #   build: app
+  app:
+    build: app
+    environment:
+      - INFERENCE_SERVER_URI=http://inference_server:5001/invocations
+      - PYTHONPATH=.
+    ports:
+      - 8501:8501
+    command: >
+      uv run streamlit run src/app.py
   
   mlflow:
     build: mlflow

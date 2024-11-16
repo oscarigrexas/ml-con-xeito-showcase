@@ -59,12 +59,14 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect_server:4200/api
       - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - AWS_ACCESS_KEY_ID=${MINIO_ELT_USER}
-      - AWS_SECRET_ACCESS_KEY=${MINIO_ELT_PASSWORD}
+      - AWS_ACCESS_KEY_ID=${MINIO_MLFLOW_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_MLFLOW_PASSWORD}
+      - ELT_AWS_ACCESS_KEY_ID=${MINIO_ELT_USER}
+      - ELT_AWS_SECRET_ACCESS_KEY=${MINIO_ELT_PASSWORD}
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
-    # command: >
-    #   bash -c "prefect deploy --all
-    #   && prefect worker start --name worker_$$HOSTNAME --pool main-work-pool"
+    command: >
+      bash -c "uv run prefect --no-prompt deploy --all
+      && uv run prefect worker start --name ml_worker__$$HOSTNAME --pool ml-work-pool"
     volumes:
       - ./ml/conf:/conf
       - ./ml/prefect.yaml:/prefect.yaml
@@ -84,7 +86,7 @@ services:
       - ./elt/prefect.yaml:/prefect.yaml
     command: >
       bash -c "uv run prefect --no-prompt deploy --all
-      && uv run prefect worker start --name elt_worker__$$HOSTNAME --pool main-work-pool"
+      && uv run prefect worker start --name elt_worker__$$HOSTNAME --pool elt-work-pool"
     depends_on:
       prefect_configurer:
         condition: service_completed_successfully
@@ -93,10 +95,13 @@ services:
     build: ml
     environment:
       - MLFLOW_REGISTRY_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=${MINIO_MLFLOW_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_MLFLOW_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+    ports:
+      - 5001:5001
     command: >
-      uv run mlflow models serve -m "models:/el-modelo@champion"
-    profiles:
-      - donotstart
+      uv run mlflow models serve --no-conda -m "models:/air_quality_sickness_classifier@champion" -h 0.0.0.0 -p 5001
 
   db:
     image: postgres:16.2

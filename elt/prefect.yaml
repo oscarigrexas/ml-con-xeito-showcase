@@ -14,7 +14,7 @@ deployments:
     entrypoint: src/air_quality_pipeline.py:load_air_quality
     parameters:
     work_pool:
-      name: main-work-pool
+      name: elt-work-pool
       work_queue_name:
       job_variables: {}
     is_schedule_active: true

@@ -47,7 +47,9 @@ services:
     environment:
       - PREFECT_API_URL=http://prefect_server:4200/api
     command: >
-      bash -c "prefect work-pool create main-work-pool --type process || exit 0"
+      bash -c "prefect work-pool create main-work-pool --type process || exit 0
+      && prefect work-pool create elt-work-pool --type process || exit 0
+      && prefect work-pool create ml-work-pool --type process || exit 0"
     depends_on:
       prefect_server:
         condition: service_healthy

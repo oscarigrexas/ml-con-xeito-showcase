@@ -1,13 +1,64 @@
 services:
-  app:
-    build: app
+  db:
+    image: postgres:16.2
+    restart: always
     environment:
-      - INFERENCE_SERVER_URI=http://inference_server:5001/invocations
-      - PYTHONPATH=.
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_MLFLOW_USER=${POSTGRES_MLFLOW_USER}
+      - POSTGRES_MLFLOW_PASSWORD=${POSTGRES_MLFLOW_PASSWORD}
+      - POSTGRES_PREFECT_USER=${POSTGRES_PREFECT_USER}
+      - POSTGRES_PREFECT_PASSWORD=${POSTGRES_PREFECT_PASSWORD}
     ports:
-      - 8501:8501
-    command: >
-      uv run streamlit run src/app.py
+      - 127.0.0.1:5432:5432
+    volumes:
+      - db__data:/var/lib/postgresql/data/
+      - ./db/init_dbs.sh:/docker-entrypoint-initdb.d/init_dbs.sh
+    healthcheck:
+      test: pg_isready -U postgres
+      interval: 10s
+
+  minio:
+    image: minio/minio:RELEASE.2023-01-25T00-19-54Z
+    ports:
+      - 9000:9000
+      - 9001:9001
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    command: server --address 0.0.0.0:9000 --console-address 0.0.0.0:9001 /data
+    volumes:
+      - minio__data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 20s
+      retries: 3
+
+  mc_admin:
+    image: minio/mc
+    entrypoint: >
+      bash -c "/usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc mb myminio/ml-artifacts;
+      /usr/bin/mc mb myminio/elt-data;
+
+      /usr/bin/mc admin policy create myminio ml_readwrite ml_readwrite_policy.json;
+      /usr/bin/mc admin user add myminio ${MINIO_MLFLOW_USER} ${MINIO_MLFLOW_PASSWORD};
+      /usr/bin/mc admin group add myminio mlflow ${MINIO_MLFLOW_USER};
+      /usr/bin/mc admin policy attach myminio ml_readwrite --group=mlflow;
+
+      /usr/bin/mc admin policy create myminio elt_readwrite elt_readwrite_policy.json;
+      /usr/bin/mc admin user add myminio ${MINIO_ELT_USER} ${MINIO_ELT_PASSWORD};
+      /usr/bin/mc admin group add myminio elt ${MINIO_ELT_USER};
+      /usr/bin/mc admin policy attach myminio elt_readwrite --group=elt;
+      exit 0
+      "
+    volumes:
+      - ./minio/ml_readwrite_policy.json:/ml_readwrite_policy.json
+      - ./minio/elt_readwrite_policy.json:/elt_readwrite_policy.json
+    depends_on:
+      minio:
+        condition: service_healthy
   
   mlflow:
     build: mlflow
@@ -104,66 +155,15 @@ services:
     command: >
       uv run mlflow models serve --no-conda -m "models:/air_quality_sickness_classifier@champion" -h 0.0.0.0 -p 5001
 
-  db:
-    image: postgres:16.2
-    restart: always
+  app:
+    build: app
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_MLFLOW_USER=${POSTGRES_MLFLOW_USER}
-      - POSTGRES_MLFLOW_PASSWORD=${POSTGRES_MLFLOW_PASSWORD}
-      - POSTGRES_PREFECT_USER=${POSTGRES_PREFECT_USER}
-      - POSTGRES_PREFECT_PASSWORD=${POSTGRES_PREFECT_PASSWORD}
+      - INFERENCE_SERVER_URI=http://inference_server:5001/invocations
+      - PYTHONPATH=.
     ports:
-      - 127.0.0.1:5432:5432
-    volumes:
-      - db__data:/var/lib/postgresql/data/
-      - ./db/init_dbs.sh:/docker-entrypoint-initdb.d/init_dbs.sh
-    healthcheck:
-      test: pg_isready -U postgres
-      interval: 10s
-
-  minio:
-    image: minio/minio:RELEASE.2023-01-25T00-19-54Z
-    ports:
-      - 9000:9000
-      - 9001:9001
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server --address 0.0.0.0:9000 --console-address 0.0.0.0:9001 /data
-    volumes:
-      - minio__data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 20s
-      retries: 3
-
-  mc_admin:
-    image: minio/mc
-    entrypoint: >
-      bash -c "/usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
-      /usr/bin/mc mb myminio/ml-artifacts;
-      /usr/bin/mc mb myminio/elt-data;
-
-      /usr/bin/mc admin policy create myminio ml_readwrite ml_readwrite_policy.json;
-      /usr/bin/mc admin user add myminio ${MINIO_MLFLOW_USER} ${MINIO_MLFLOW_PASSWORD};
-      /usr/bin/mc admin group add myminio mlflow ${MINIO_MLFLOW_USER};
-      /usr/bin/mc admin policy attach myminio ml_readwrite --group=mlflow;
-
-      /usr/bin/mc admin policy create myminio elt_readwrite elt_readwrite_policy.json;
-      /usr/bin/mc admin user add myminio ${MINIO_ELT_USER} ${MINIO_ELT_PASSWORD};
-      /usr/bin/mc admin group add myminio elt ${MINIO_ELT_USER};
-      /usr/bin/mc admin policy attach myminio elt_readwrite --group=elt;
-      exit 0
-      "
-    volumes:
-      - ./minio/ml_readwrite_policy.json:/ml_readwrite_policy.json
-      - ./minio/elt_readwrite_policy.json:/elt_readwrite_policy.json
-    depends_on:
-      minio:
-        condition: service_healthy
+      - 8501:8501
+    command: >
+      uv run streamlit run src/app.py
 
 volumes:
   db__data:

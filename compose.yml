@@ -101,6 +101,7 @@ services:
       bash -c "prefect work-pool create main-work-pool --type process
       & prefect work-pool create elt-work-pool --type process
       & prefect work-pool create ml-work-pool --type process
+      & prefect work-pool create monitoring-work-pool --type process
       & wait"
     depends_on:
       prefect_server:
@@ -164,6 +165,36 @@ services:
       - 8501:8501
     command: >
       uv run streamlit run src/app.py
+
+  data_collector:
+    build: monitoring
+    environment:
+      - MLFLOW_REGISTRY_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=${MINIO_ELT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ELT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - PYTHONPATH=.
+    ports:
+      - 4300:4300
+    command: >
+      uv run python src/api.py
+
+  monitoring_worker:
+    build: monitoring
+    environment:
+      - MLFLOW_REGISTRY_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=${MINIO_ELT_USER}
+      - AWS_SECRET_ACCESS_KEY=${MINIO_ELT_PASSWORD}
+      - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - PREFECT_API_URL=http://prefect_server:4200/api
+    volumes:
+      - ./monitoring/prefect.yaml:/prefect.yaml
+    command: >
+      bash -c "uv run prefect --no-prompt deploy --all
+      && uv run prefect worker start --name monitoring_worker__$$HOSTNAME --pool monitoring-work-pool"
+    depends_on:
+      prefect_configurer:
+        condition: service_completed_successfully
 
 volumes:
   db__data:

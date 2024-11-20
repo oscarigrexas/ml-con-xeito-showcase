@@ -4,6 +4,7 @@ from random import randint
 
 import pandas as pd
 import requests
+from src.adapters.data import log_current_data
 
 
 class FakeMLAdapter:
@@ -16,6 +17,8 @@ class MLFlowMLAdapter:
         self.model_server_uri = model_server_uri
 
     def get_prediction(self, input_data: pd.DataFrame) -> int:
+        log_current_data(current_data=input_data)
+
         payload = json.dumps({"dataframe_split": input_data.to_dict(orient="split")})
         response = requests.post(
             url=self.model_server_uri,

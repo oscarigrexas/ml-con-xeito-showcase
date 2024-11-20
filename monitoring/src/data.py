@@ -7,13 +7,8 @@ import pandas as pd
 from pydantic import BaseModel
 
 
-class FieldsField(BaseModel):
-    name: str | int
-    type: str
-
-
 class SchemaField(BaseModel):
-    fields: List[FieldsField]
+    fields: list[dict]
     primaryKey: List[str]
     pandas_version: str
 
@@ -72,17 +67,18 @@ class S3CSVRepository:
         )
 
     def append(self, data: pd.DataFrame) -> None:
-        location = f"s3://{self.bucket}/{self.prefix}/data.csv"
-        storage_options = {"client_kwargs": {"endpoint_url": self.endpoint}}
-        data.to_csv(location, index=False, storage_options=storage_options)
-
-    def overwrite(self, data: pd.DataFrame) -> None:
         location = f"s3://{self.bucket}/{self.prefix}/{datetime.now().isoformat()}.csv"
         storage_options = {"client_kwargs": {"endpoint_url": self.endpoint}}
         data.to_csv(location, index=False, storage_options=storage_options)
 
+    def overwrite(self, data: pd.DataFrame) -> None:
+        location = f"s3://{self.bucket}/{self.prefix}/data.csv"
+        storage_options = {"client_kwargs": {"endpoint_url": self.endpoint}}
+        data.to_csv(location, index=False, storage_options=storage_options)
+
     def add(self, item: DFDataItem, mode: Literal["append", "overwrite"]) -> None:
-        new_data = pd.read_json(StringIO(item.model_dump_json()), orient="table")
+        serialized_df = item.model_dump_json()
+        new_data = pd.read_json(StringIO(serialized_df), orient="table")
         if mode == "append":
             self.append(data=new_data)
         elif mode == "overwrite":

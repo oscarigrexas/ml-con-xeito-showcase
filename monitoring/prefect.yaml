@@ -1,0 +1,22 @@
+name: monitoring
+prefect-version: 3.0.0
+
+build:
+push:
+pull:
+
+deployments:
+  - name: run_ml_monitoring
+    version:
+    tags: [monitoring]
+    description:
+    schedules:
+      - cron: 0 0 * * *
+        timezone: Europe/Madrid
+        active: true
+    entrypoint: src/observability.py:run_ml_monitoring_experiment
+    parameters:
+    work_pool:
+      name: monitoring-work-pool
+      work_queue_name:
+      job_variables: {}

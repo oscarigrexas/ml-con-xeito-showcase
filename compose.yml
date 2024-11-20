@@ -117,6 +117,7 @@ services:
       - ELT_AWS_ACCESS_KEY_ID=${MINIO_ELT_USER}
       - ELT_AWS_SECRET_ACCESS_KEY=${MINIO_ELT_PASSWORD}
       - MLFLOW_S3_ENDPOINT_URL=http://minio:9000
+      - DATA_COLLECTOR_URI=http://data_collector:4300
     command: >
       bash -c "uv run prefect --no-prompt deploy --all
       && uv run prefect worker start --name ml_worker__$$HOSTNAME --pool ml-work-pool"
@@ -160,6 +161,7 @@ services:
     build: app
     environment:
       - INFERENCE_SERVER_URI=http://inference_server:5001/invocations
+      - DATA_COLLECTOR_URI=http://data_collector:4300
       - PYTHONPATH=.
     ports:
       - 8501:8501

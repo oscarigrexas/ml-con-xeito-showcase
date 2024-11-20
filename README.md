@@ -50,6 +50,8 @@ In reality, these invidual components are their own self-contained Python projec
 ## Components
 Let's take a look at these individual components and their roles in the bigger picture.
 
+![Architecture diagram of the system](img/arch.jpg)
+
 ### The DB
 In this case, the DB is only used as support, to store some metadata for other services (Prefect and MLFlow). In any case, it's a full-fledged Postgres instance, and could of course be used to setup a data warehouse with actual business data and analytics capabilities!
 

@@ -12,5 +12,5 @@ features:
   - european_aqi
 
 estimator_params:
-  n_estimators: 200
-  min_samples_split: 3
+  n_estimators: 400
+  min_samples_split: 2

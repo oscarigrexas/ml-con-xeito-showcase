@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import plotly_express as px
 import requests
 from config import config
 from prefect import flow
@@ -75,11 +76,18 @@ def train_model():
         }
         print(f"Test metrics: {metrics}")
 
+        feature_importance_plot = px.bar(
+            x=X_train.columns, y=model["estimator"].feature_importances_
+        )
+
         model_signature = mlflow.models.infer_signature(
             model_input=X_train, model_output=y_pred
         )
 
         mlflow.log_metrics(metrics=metrics)
+        mlflow.log_figure(
+            figure=feature_importance_plot, artifact_file="feature_importances.html"
+        )
         mlflow.sklearn.log_model(
             sk_model=model,
             artifact_path="model",

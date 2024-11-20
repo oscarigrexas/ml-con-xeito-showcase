@@ -51,7 +51,12 @@ def load_air_quality() -> None:
 
     def yield_map(item):
         for values in zip(*item.values()):
-            yield {k: v for k, v in zip(item.keys(), values)}
+            value_array = {k: v for k, v in zip(item.keys(), values)}
+            if value_array["european_aqi"] > 30:
+                value_array["is_sick"] = 1
+            else:
+                value_array["is_sick"] = 0
+            yield value_array
 
     air_quality_source.resources["air-quality"].add_yield_map(yield_map)
 

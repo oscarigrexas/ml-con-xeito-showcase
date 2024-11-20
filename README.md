@@ -57,12 +57,12 @@ In this case, the DB is only used as support, to store some metadata for other s
 
 You may check it out at the standard port 5432, using the credentials defined in your `.env` file. Use `docker compose exec -it psql -U postgres` to run psql from within the DB container itself, or use your favorite SQL tool.
 
-## The object storage
+### The object storage
 Being the backbone of data lakes, unstructured object storage services are very much useful in data and ML engineering contexts. In this case, the S3-like object storage [Minio](https://min.io/docs/minio/container/index.html) serves as both a landing zone for the raw meteorological data from the API, and to house the files that MLFlow uses to store ML models and other unstructured artifacts.
 
 You can browse its buckets and files at [http://localhost:9001](http://localhost:9001), using the `MINIO_ROOT_` credentials in `.env`.
 
-## The orchestrator
+### The orchestrator
 An orchestration-scheduling service such as [Prefect](https://docs.prefect.io/v3/get-started/index) (or Airflow, or Dagster, etc., but I like this one) is useful to both... well... orchestrate and schedule..., but also to add a very nice observability and resilience layer to data and ML workflows, which usually look like pipelines and DAGs, and benefit greatly from a bit of structure.
 
 Check out its workflow runs and logs at [http://localhost:4200](http://localhost:4200)!
@@ -73,20 +73,20 @@ This component uses [dlt](https://dlthub.com/) to query the [Open-Meteo meteorol
 ## The notebooks
 [Jupyter](https://jupyter.org/) Notebooks are a very popular and scientist-loved way of interacting with Python code, ML models and visualizations in a friendly sandbox context. While they're often associated with not-so-great software-building practices, they're an invaluable tool to iterate efficiently through data science approaches.
 
-## The ML code
+### The ML code
 This module contains the ML code itself (and all of its data science dependencies). Here we extract our favorite model from the dirtier exploration code, and package it in such a way that it can be easily trained, evaluated, distributed and reproduced. The generated artifacts (model and Docker image containing its dependencies) can then be used to serve the ML solution.
 
-## The front-end app
+### The front-end app
 This is just an example of the kind of downstream app that could be consuming our model. Built using [Streamlit](https://docs.streamlit.io/), it acts as a thin but colorful wrapper over the API of the model server.
 
 Interact with it at [http://localhost:8501](http://localhost:8501).
 
-## The ML experiment tracking server and model registry
+### The ML experiment tracking server and model registry
 The star of the project. [MLFlow](https://mlflow.org/docs/latest/index.html) serves as an experiment tracking server (logging the parameters and results of both exploratory and production-level training), as a model registry (storing the different versions of the trained models, along with their lineage and metadata), and as an inference server (publishing models under a consistent API and allowing for promotion patterns).
 
 Browse it at [http://localhost:5000](http://localhost:5000).
 
-## The data collector and ML monitoring service
+### The data collector and ML monitoring service
 Finally, a simple data collection service helps keep track of the live data that passes through the model. Comparing these recent observations to a previously saved reference dataset allows us to detect quality issues such as data drift or prediction drift, that could cause or diagnose unexpected model behavior. The insights derived from these checks could be used to set up some alarms or trigger model retrainings.
 
 In this case, the data collector comes wrapped in a simple [FastAPI](https://fastapi.tiangolo.com/) API (which you can find at [http://localhost:4300](http://localhost:4300)), and uses [Evidently](https://docs.evidentlyai.com/) to do the math.

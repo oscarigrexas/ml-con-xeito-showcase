@@ -10,11 +10,13 @@ deployments:
     version:
     tags: [ml]
     description:
-    schedule:
+    schedules:
+      - cron: 0 0 * * 0
+        timezone: Europe/Madrid
+        active: true
     entrypoint: src/training.py:train_model
     parameters:
     work_pool:
       name: ml-work-pool
       work_queue_name:
       job_variables: {}
-    is_schedule_active: true

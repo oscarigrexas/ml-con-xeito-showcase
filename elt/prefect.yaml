@@ -10,11 +10,13 @@ deployments:
     version:
     tags: [elt]
     description:
-    schedule:
+    schedules:
+      - cron: 0 0 * * *
+        timezone: Europe/Madrid
+        active: true
     entrypoint: src/air_quality_pipeline.py:load_air_quality
     parameters:
     work_pool:
       name: elt-work-pool
       work_queue_name:
       job_variables: {}
-    is_schedule_active: true
